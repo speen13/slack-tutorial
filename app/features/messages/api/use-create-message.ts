@@ -5,9 +5,14 @@ import {Id} from "@/convex/_generated/dataModel";
 
 
 type RequestType = {
-    name: string  // workspace name (required)
+    body: string,
+    image?: Id<'_storage'>,
+    workspaceId: Id<'workspaces'>,
+    channelId?: Id<'channels'>,
+    parentMessageId?: Id<'messages'>,
+    // workspace name (required)
 }
-type ResponseType = Id<"workspaces"> | null
+type ResponseType = Id<"messages"> | null
 
 type Options = {
     onSuccess?: (data: ResponseType) => void
@@ -16,7 +21,7 @@ type Options = {
     throwError?: boolean
 }
 
-export const useCreateWorkSpace = () => {
+export const useCreateMessage = () => {
     const [data, setData] = useState<ResponseType>(null)
     const [error, setError] = useState<Error | null>(null)
     const [status, setStatus] = useState<'success' | 'error' | 'pending' | 'settled'>(null)
@@ -31,7 +36,7 @@ export const useCreateWorkSpace = () => {
     const isError = useMemo(() => status === 'error', [status])
     const isSettled = useMemo(() => status ==='settled', [status])
 
-    const mutation = useMutation(api.workspaces.create)
+    const mutation = useMutation(api.messages.create)
 
     const mutate = useCallback(async (values: RequestType, options?: Options) => {
         try {
@@ -45,9 +50,9 @@ export const useCreateWorkSpace = () => {
         } catch (error) {
             setStatus('error')
             options?.onError?.(error as Error)
-           if(options?.throwError) {
-               throw error
-           }
+            if(options?.throwError) {
+                throw error
+            }
         } finally {
             setStatus('settled')
             options?.onSettled?.()
