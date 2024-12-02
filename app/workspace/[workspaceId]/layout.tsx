@@ -2,6 +2,8 @@
 
 import Toolbar from "@/app/workspace/[workspaceId]/toolbar";
 import Sidebar from "@/app/workspace/[workspaceId]/sidebar";
+import { NuqsAdapter } from 'nuqs/adapters/next/app'
+
 
 import {
     ResizableHandle,
@@ -9,14 +11,23 @@ import {
     ResizablePanelGroup,
 } from "@/components/ui/resizable"
 import WorkspaceSidebar from "@/app/workspace/[workspaceId]/workspace-sidebar";
+import {usePanel} from "@/hooks/use-panel";
+import {Loader} from "lucide-react";
+import {Id} from "@/convex/_generated/dataModel";
+import {Thread} from "@/app/features/messages/components/thread";
 
 
 interface WorkspaceIdLayoutProps {
     children: React.ReactNode;
 }
 const WorkSpaceIdLayout = ({children}: WorkspaceIdLayoutProps) => {
+    const {parentMessageId, onCloseMessage} = usePanel()
+    const showPanel = !!parentMessageId
+
     return (
+
         <div className='h-full'>
+
             <Toolbar />
             <div className='flex h-[calc(100vh-40px)]'>
                 <Sidebar />
@@ -26,14 +37,37 @@ const WorkSpaceIdLayout = ({children}: WorkspaceIdLayoutProps) => {
                     </ResizablePanel>
                     <ResizableHandle withHandle/>
                     <ResizablePanel minSize={20}>
-                        {children}
-                    </ResizablePanel>
 
+                        {children}
+
+                    </ResizablePanel>
+                    {showPanel && (
+                        <>
+
+                        <ResizableHandle withHandle/>
+
+                            <ResizablePanel minSize={20} defaultSize={29}>
+                                {parentMessageId ? (
+                                    <Thread
+                                    messageId={parentMessageId as Id<'messages'>}
+                                    onClose={onCloseMessage}
+                                    />
+                                ) : (
+                                    <div className='flex items-center justify-center h-full'>
+                                        <Loader className='size-5 animate-spin text-muted-foreground'/>
+                                    </div>
+                                )}
+
+                            </ResizablePanel>
+
+                        </>
+                    )}
                 </ResizablePanelGroup>
 
             </div>
 
         </div>
+
     );
 };
 
