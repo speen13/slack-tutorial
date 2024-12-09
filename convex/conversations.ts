@@ -47,19 +47,15 @@ export const createOrGet = mutation({
         .unique()
 
         if(existingConversation) {
-            return existingConversation
+            return existingConversation._id
         }
         const conversationId = await ctx.db.insert('conversations', {
             workspaceId: args.workspaceId,
             memberOneId: currentMember._id,
             memberTwoId: otherMember._id,
         })
-        const conversation = await ctx.db.get(conversationId)
 
-        if(!conversation) {
-            throw new Error("Conversation not found")
-        }
 
-        return conversation
+        return conversationId
     },
 })

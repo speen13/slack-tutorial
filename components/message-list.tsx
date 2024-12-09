@@ -7,6 +7,7 @@ import {Id} from "@/convex/_generated/dataModel";
 import {useWorkspaceId} from "@/hooks/use-workspace-id";
 import {useCurrentMember} from "@/app/features/members/api/use-current-member";
 import {Loader} from "lucide-react";
+import {ConversationHero} from "@/components/conversation-hero";
 
 const TIME_THRESHOLD = 5
 interface MessageListProps {
@@ -135,6 +136,12 @@ export const MessageList = ({
             <ChannelHero
                 name={channelName}
                 creationTime={channelCreationTime}
+            />
+        )}
+        {variant === 'conversation'  && (
+            <ConversationHero
+                name={memberName}
+                image={memberImage}
             />
         )}
     </div>

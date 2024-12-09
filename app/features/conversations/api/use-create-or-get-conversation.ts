@@ -11,7 +11,7 @@ type RequestType = {
     memberId: Id<'members'>,
     // workspace name (required)
 }
-type ResponseType = Doc<"conversations"> | null
+type ResponseType = Id<"conversations"> | null
 
 type Options = {
     onSuccess?: (data: ResponseType) => void
