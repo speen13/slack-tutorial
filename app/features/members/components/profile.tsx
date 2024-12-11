@@ -1,10 +1,23 @@
 import {Id} from "@/convex/_generated/dataModel";
 import {useGetMember} from "@/app/features/members/api/use-get-member";
 import {Button} from "@/components/ui/button";
-import {AlertTriangle, Loader, MailIcon, XIcon} from "lucide-react";
+import {AlertTriangle, ChevronDownIcon, Loader, MailIcon, XIcon} from "lucide-react";
 import {Avatar, AvatarFallback, AvatarImage} from "@/components/ui/avatar";
 import {Separator} from "@/components/ui/separator";
 import Link from "next/link";
+import {useUpdateMember} from "@/app/features/members/api/use-update-member";
+import {useRemoveMember} from "@/app/features/members/api/use-remove-member";
+import {useCurrentMember} from "@/app/features/members/api/use-current-member";
+import {useWorkspaceId} from "@/hooks/use-workspace-id";
+import {toast} from "sonner";
+import {useConfirm} from "@/hooks/use-confirm";
+import {useRouter} from "next/navigation";
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuRadioGroup, DropdownMenuRadioItem,
+    DropdownMenuTrigger
+} from "@/components/ui/dropdown-menu";
 
 interface ProfileProps {
     memberId: Id<'members'>
@@ -12,9 +25,74 @@ interface ProfileProps {
 }
 
 export const Profile = ({memberId, onClose}: ProfileProps) => {
-    const {data: member, isLoading: isLoadingMember} = useGetMember({id: memberId})
+    const router = useRouter()
+    const workspaceId = useWorkspaceId()
+    const [LeveDialog, confirmLeave] = useConfirm(
+        'Leave workspace',
+        'Are  you sure you want to leave?'
+    )
+    const [RemoveDialog, confirmRemove] = useConfirm(
+        'Remove member',
+        'Are  you sure to remove this member?'
+    )
 
-    if(isLoadingMember) {
+    const [UpdateDialog, confirmUpdate] = useConfirm(
+        'Change role',
+        "Are  you sure to change this member's role?"
+    )
+    const {data: member, isLoading: isLoadingMember} = useGetMember({id: memberId})
+    const {data: currentMember, isLoading: isLoadingCurrentMember} = useCurrentMember({
+    workspaceId
+    })
+    const {mutate: updateMember, isPending: isUpdatingMember} = useUpdateMember()
+    const {mutate: removeMember, isPending: isRemovingMember } = useRemoveMember()
+
+    const onRemove = async () => {
+        const ok = await confirmRemove()
+
+        if(!ok) return
+        removeMember({id: memberId}) , {
+            onSuccess: () => {
+                toast.success('Member removed')
+                onClose()
+            },
+            onError: () => {
+                toast.error('Failed to remove member')
+            }
+        }
+    }
+
+    const onLeave = async () => {
+        const ok = await confirmLeave()
+        if(!ok) return
+        removeMember({id: memberId}) , {
+            onSuccess: () => {
+                router.replace('/')
+                toast.success('You left to workspace ')
+                onClose()
+            },
+            onError: () => {
+                toast.error('Failed to leave the workspace')
+            }
+        }
+    }
+
+
+    const onUpdate = async (role: 'admin' | 'member') => {
+        const ok = await confirmUpdate()
+        if(!ok) return
+        updateMember({id: memberId, role}) , {
+            onSuccess: () => {
+                toast.success('Role changed ')
+                onClose()
+            },
+            onError: () => {
+                toast.error('Failed to change role')
+            }
+        }
+    }
+
+    if(isLoadingMember || isLoadingCurrentMember) {
         return (
             <div className='h-full flex flex-col'>
                 <div className='flex h-[49px] justify-between items-center px-4 border-b'>
@@ -49,6 +127,11 @@ export const Profile = ({memberId, onClose}: ProfileProps) => {
     }
 const avatarFallback = member.user.name?.[0] ?? 'M'
     return (
+
+        <>
+            <RemoveDialog />
+            <LeveDialog />
+            <UpdateDialog />
         <div className='h-full flex flex-col'>
             <div className='flex h-[49px] justify-between items-center px-4 border-b'>
                 <p className='text-lg font-bold'>Profile</p>
@@ -68,6 +151,43 @@ const avatarFallback = member.user.name?.[0] ?? 'M'
                 <p className='text-xl font-bold'>
                     {member.user.name}
                 </p>
+                {currentMember?.role === 'admin' &&
+                currentMember?._id !== memberId ? (
+                    <div className='flex items-center gap-2 mt-4'>
+                        <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                    <Button variant='outline' className='w-full capitalize'>
+                        {member.role} <ChevronDownIcon className='size-4 ml-2'/>
+                    </Button>
+                        </DropdownMenuTrigger>
+                            <DropdownMenuContent className='w-full'>
+                                <DropdownMenuRadioGroup
+                                    value={member.role}
+                                    onValueChange={(role) => onUpdate(role as 'admin' | 'member')}
+                                >
+                                    <DropdownMenuRadioItem value='admin'>
+                                        Admin
+                                    </DropdownMenuRadioItem>
+                                    <DropdownMenuRadioItem value='member'>
+                                        Member
+                                    </DropdownMenuRadioItem>
+                                </DropdownMenuRadioGroup>
+                            </DropdownMenuContent>
+                        </DropdownMenu>
+
+                    <Button onClick={onRemove} variant='outline' className='w-full'>
+                        Remove
+                    </Button>
+                    </div>
+                ) : currentMember?._id === memberId &&
+                    currentMember?.role !== 'admin' ? (
+                    <div className='mt-4'>
+                        <Button onClick={onLeave} variant='outline' className='w-full capitalize' >
+                            Leave
+                        </Button>
+                    </div>
+                ) : null
+                }
             </div>
             <Separator />
             <div className='flex flex-col p-4'>
@@ -87,5 +207,6 @@ const avatarFallback = member.user.name?.[0] ?? 'M'
                 </div>
             </div>
         </div>
+        </>
     )
 }
