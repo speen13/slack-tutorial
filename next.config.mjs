@@ -4,6 +4,7 @@ const nextConfig = {
     // ignoreDevErrors: true,
     // ignoreLintErrors: true,
     ignoreBuildErrors: true,
-  };
-}
+  },
+};
+
 export default nextConfig;
